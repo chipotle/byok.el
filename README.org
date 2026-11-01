@@ -67,7 +67,7 @@ The eject command and the mount path are correct for macOS, but will need to be 
 
 ** Notes
 
-If you're going to copy a file (or subtree) that's older over a file (or subtree) that's newer, the library will ask for confirmation, but the BYOK device *does not update timestamps* when you make changes to a file, so this may not be a particularly useful check. (The timestamps are updated correctly when the library copies a file to the BYOK.)
+The BYOK device does not keep track of date and time, which makes it impossible for the library to determine whether the file on your device is newer or older than the device on your system. This is why you explicitly copy to or from the device rather than syncing. If you want to get down and dirty with ~ediff~ for changes, you can open the files side by side.
 
 While the file copying commands can work on any text file, the subtree commands require an Org or Markdown file. The latter assumes you're using [[https://jblevins.org/projects/markdown-mode/][Markdown Mode for Emacs]] and probably won't work correctly with other Markdown modes.
 

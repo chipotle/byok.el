@@ -1,5 +1,5 @@
 ;; byok.el - BYOK Device access library
-;; Watts Martin, November 2026 (version 0.2)
+;; Watts Martin, November 2026 (version 0.3)
 
 
 (defun byok-copy-file-to-device ()
@@ -8,7 +8,6 @@
   (byok-confirm-mounted)
   (save-buffer)
   (make-directory (byok-directory) t)
-  (byok-test-newer (byok-full-path) buffer-file-name "device")
   (copy-file buffer-file-name (byok-full-path) t)
   (message "Copied to BYOK (%s > %s)" (byok-project-name) (byok-file-name)))
 
@@ -19,7 +18,6 @@
   (byok-confirm-mounted)
   (byok-confirm-file-exists (byok-file-name))
   (save-buffer)
-  (byok-test-newer buffer-file-name (byok-full-path) "system")
   (byok-backup)
   (insert-file-contents (byok-full-path) nil nil nil t)
   (message "Copied from BYOK (%s > %s)" (byok-project-name) (byok-file-name)))
@@ -33,7 +31,6 @@
       ((file-name (concat (byok-get-heading) ".txt"))
        (file-path (concat (byok-directory) "/" file-name)))
     (make-directory (byok-directory) t)
-    (byok-test-newer file-path buffer-file-name "device")
     (save-mark-and-excursion
       (byok-mark-subtree)
       (write-region (region-beginning) (region-end)
@@ -51,7 +48,6 @@
        (file-path (concat (byok-directory) "/" file-name)))
     (byok-confirm-file-exists file-name)
     (save-buffer)
-    (byok-test-newer buffer-file-name file-path "system")
     (byok-backup)
     (byok-mark-subtree)
     (delete-region (region-beginning) (region-end))
@@ -102,11 +98,6 @@
   (if (eq byok-backups t)
       (copy-file buffer-file-name (concat buffer-file-name ".bak") t)
     (backup-buffer)))
-
-(defun byok-test-newer (file1 file2 item)
-  (when (file-newer-than-file-p file1 file2) ;; tests if file1 newer than file2
-      (unless (yes-or-no-p (format "File on %s is newer. Copy anyway?" item))
-          (user-error "Copy cancelled."))))
 
 (defun byok-buffer-has-subtree ()
   (unless (or (eq major-mode 'org-mode) (eq major-mode 'markdown-mode))
