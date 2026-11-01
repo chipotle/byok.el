@@ -1,0 +1,39 @@
+* byok.el
+
+A library for accessing the [[https://byok.io/device][BYOK Device]] from within Emacs.
+
+** Why?
+
+The BYOK device is a neat "digital typewriter," but if you're not using the BYOK Studio software that provides wireless syncing, it can be a little clunky to get files in and out using the device's disk mode. This is especially true for Emacs users, who may be writing in Org Mode: the BYOK doesn't recognize the ~.org~ extension as a text file at all. This library is an attempt at a solution within Emacs.
+
+** Functions provided
+
+byok.el provides five functions, and a Transient menu to call them mapped to ~C-c b~ in text modes. Before using any functions, you need to put the BYOK into Disk Mode and connect it to your computer.
+
+The byok.el library treats the directory name of your current file as the name of a "Project" on the BYOK device. If you're editing ~$HOME/Documents/Stories/Dark and Stormy Night.org~, the project name is ~Stories~. The BYOK requires all files to be in projects.
+
++ ~byok-copy-file-to-device~ copies the current file to the BYOK. If the file does not end in ~.txt~, then ~.txt~ will be *appended* to the file name. (Yes, this means that in the example above, it would be saved as ~Dark and Stormy Night.org.txt~.)
++ ~byok-copy-subtree-to-device~ copies the current Org subtree to the BYOK, using the heading of the subtree as the filename: if the subtree's heading is "Chapter 12", the file will be ~Chapter 12.txt~. The project name will be the directory of the current file, as always. This is useful if you're keeping a long document all in one file. Emacs can handle that, but the BYOK can't.
++ ~byok-copy-file-from-device~ copies the file that matches your buffer's current file name and directory/project from the BYOK back to Emacs. This loads the content of the BYOK's file into your current buffer, but doesn't change the file on disk (although it does save the buffer before copying).
++ ~byok-copy-subtree-from-device~ copies the file that matches your buffer's current subtree heading name and directory/project from the BYOK back to Emacs. This will replace the buffer's copy of the subtree with the BYOK file, but doesn't change your system's file on disk (although it does save the buffer before copying).
++ ~byok-unmount~ unmounts/ejects the BYOK device.
+
+** Options
+
+You can customize options in the BYOK group: the path the BYOK mounts on, the command used to unmount/eject the BYOK, and how to make backups when copying from the BYOK. You can either have it create a ~.bak~ file before copying, or to use the Emacs ~backup-buffer~ function (which may or may not do anything, depending on your Emacs configuration).
+
+The eject command and the mount path are correct for macOS, but will need to be changed for other devices.
+
+** Notes
+
+If you're going to copy a file (or subtree) that's older over a file (or subtree) that's newer, the library will ask for confirmation, but the BYOK device *does not update timestamps* when you make changes to a file, so this may not be a particularly useful check. (The timestamps are updated correctly when the library copies a file to the BYOK.)
+
+The subtree commands currently only work on Org Mode files. A later version will try to extend this to Markdown.
+
+** Installation
+
+Since this isn't a package yet, just use the ~load~ command in your init file, e.g.,
+
+#+begin_src emacs-lisp
+(load (concat user-emacs-directory "byok.el"))
+#+end_src
