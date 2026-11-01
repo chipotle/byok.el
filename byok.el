@@ -1,5 +1,5 @@
 ;; byok.el - BYOK Device access library
-;; Watts Martin, October 2026
+;; Watts Martin, November 2026 (version 0.2)
 
 
 (defun byok-copy-file-to-device ()
@@ -30,18 +30,16 @@
   (interactive)
   (byok-confirm-mounted)
   (let*
-      ((file-name (concat (org-get-heading) ".txt"))
+      ((file-name (concat (byok-get-heading) ".txt"))
        (file-path (concat (byok-directory) "/" file-name)))
     (make-directory (byok-directory) t)
     (byok-test-newer file-path buffer-file-name "device")
     (save-mark-and-excursion
-      (org-mark-subtree)
+      (byok-mark-subtree)
       (write-region (region-beginning) (region-end)
                     (concat (byok-directory) "/" file-name)
                     nil nil nil nil))
-    (message "Copied to BYOK (%s > %s.txt)"
-             (byok-project-name)
-             (substring-no-properties (org-get-heading)))))
+    (message "Copied to BYOK (%s > %s)" (byok-project-name) file-name)))
 
 
 (defun byok-copy-subtree-from-device ()
@@ -49,13 +47,14 @@
   (interactive)
   (byok-confirm-mounted)
   (let*
-      ((file-name (concat (substring-no-properties (org-get-heading)) ".txt"))
+      ((file-name (concat (substring-no-properties (byok-get-heading)) ".txt"))
        (file-path (concat (byok-directory) "/" file-name)))
     (byok-confirm-file-exists file-name)
     (save-buffer)
     (byok-test-newer buffer-file-name file-path "system")
     (byok-backup)
-    (org-cut-subtree)
+    (byok-mark-subtree)
+    (delete-region)
     (insert-file-contents file-path)
     (message "Copied from BYOK (%s > %s)"
              (byok-project-name) file-name)))
@@ -66,6 +65,14 @@
   (interactive)
   (byok-confirm-mounted)
   (shell-command byok-unmount-command))
+
+
+(defun byok-projects-directory ()
+  "Open BYOK top-level Projects directory."
+  (interactive)
+  (byok-confirm-mounted)
+  (dired (concat byok-path "/Projects/")))
+
 
 ;; Helper functions
 
@@ -86,12 +93,11 @@
   (concat (byok-directory) "/" (byok-file-name)))
 
 (defun byok-confirm-mounted ()
-  (if (not (file-exists-p byok-path))
+  (unless (file-exists-p byok-path)
       (user-error "BYOK device does not appear to be mounted.")))
 
 (defun byok-confirm-file-exists (file-name)
-  (if (not (file-exists-p
-            (concat (byok-directory) "/" file-name)))
+  (unless (file-exists-p (concat (byok-directory) "/" file-name))
       (user-error (message "File '%s' does not exist on BYOK." file-name))))
 
 (defun byok-backup ()
@@ -100,9 +106,30 @@
     (backup-buffer)))
 
 (defun byok-test-newer (file1 file2 item)
-  (if (file-newer-than-file-p file1 file2) ;; tests if file1 newer than file2
-      (if (not (yes-or-no-p (format "File on %s is newer. Copy anyway?" item)))
+  (when (file-newer-than-file-p file1 file2) ;; tests if file1 newer than file2
+      (unless (yes-or-no-p (format "File on %s is newer. Copy anyway?" item))
           (user-error "Copy cancelled."))))
+
+(defun byok-buffer-has-subtree ()
+  (unless (or (eq major-mode 'org-mode) (eq major-mode 'markdown-mode))
+    (user-error "Subtree commands require Org or Markdown mode.")))
+
+(defun byok-mark-subtree ()
+  (if (eq major-mode 'org-mode)
+      (org-mark-subtree)
+    (markdown-mark-subtree)))
+
+(defun byok-get-heading ()
+  (let
+      ((heading-text
+        (if (eq major-mode 'org-mode)
+            (substring-no-properties (org-get-heading))
+          (save-mark-and-excursion
+            (markdown-back-to-heading t)
+            (when (looking-at markdown-regex-header)
+              (or (match-string-no-properties 1)
+                  (match-string-no-properties 5)))))))
+    (replace-regexp-in-string "[,?/*\[&`()]" "" heading-text)))
 
 ;; Customizable options
 
@@ -132,6 +159,7 @@
    ("f" "Copy matching file from device to buffer" byok-copy-file-from-device)
    ("s" "Copy current subtree to file on device" byok-copy-subtree-to-device)
    ("r" "Retrieve current subtree from file on device" byok-copy-subtree-from-device)
+   ("d" "Open BYOK top-level projects directory" byok-projects-directory)
    ("u" "Unmount/eject BYOK device" byok-unmount)])
 
 (keymap-set text-mode-map "C-c b" #'byok-menu)
