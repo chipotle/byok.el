@@ -54,7 +54,7 @@
     (byok-test-newer buffer-file-name file-path "system")
     (byok-backup)
     (byok-mark-subtree)
-    (delete-region)
+    (delete-region (region-beginning) (region-end))
     (insert-file-contents file-path)
     (message "Copied from BYOK (%s > %s)"
              (byok-project-name) file-name)))
@@ -80,11 +80,9 @@
   (car (last (split-string default-directory "/" t))))
 
 (defun byok-file-name ()
-  (let
-      ((file-name (file-name-nondirectory buffer-file-name)))
-    (if (eq (substring file-name -4 nil) ".txt")
-      file-name
-    (concat file-name ".txt"))))
+  (concat
+   (file-name-sans-extension (file-name-nondirectory buffer-file-name))
+   ".txt"))
 
 (defun byok-directory ()
   (concat byok-path "/Projects/" (byok-project-name)))
