@@ -7,20 +7,28 @@
   (interactive)
   (byok-confirm-mounted)
   (save-buffer)
-  (make-directory (byok-directory) t)
-  (copy-file buffer-file-name (byok-full-path) t)
-  (message "Copied to BYOK (%s > %s)" (byok-project-name) (byok-file-name)))
+  (let*
+      ((file-name (byok-file-name))
+       (file-path (concat (byok-directory) "/" file-name)))
+    (make-directory (byok-directory) t)
+    (when (and (file-exists-p file-path) (eq byok-backup-on-device t))
+      (copy-file file-path (concat file-path "~") t))
+    (copy-file buffer-file-name file-path t)
+    (message "Copied to BYOK (%s > %s)" (byok-project-name) file-name)))
 
 
 (defun byok-copy-file-from-device ()
   "Copy matching file from mounted BYOK device to current buffer."
   (interactive)
   (byok-confirm-mounted)
-  (byok-confirm-file-exists (byok-file-name))
-  (save-buffer)
-  (byok-backup)
-  (insert-file-contents (byok-full-path) nil nil nil t)
-  (message "Copied from BYOK (%s > %s)" (byok-project-name) (byok-file-name)))
+  (let*
+      ((file-name (byok-file-name))
+       (file-path (concat (byok-directory) "/" file-name)))
+    (byok-confirm-file-exists file-name)
+    (save-buffer)
+    (byok-backup)
+    (insert-file-contents file-path nil nil nil t)
+    (message "Copied from BYOK (%s > %s)" (byok-project-name) file-name)))
 
 
 (defun byok-copy-subtree-to-device ()
@@ -31,10 +39,11 @@
       ((file-name (concat (byok-get-heading) ".txt"))
        (file-path (concat (byok-directory) "/" file-name)))
     (make-directory (byok-directory) t)
+    (when (and (file-exists-p file-path) (eq byok-backup-on-device t))
+      (copy-file file-path (concat file-path "~") t))
     (save-mark-and-excursion
       (byok-mark-subtree)
-      (write-region (region-beginning) (region-end)
-                    (concat (byok-directory) "/" file-name)
+      (write-region (region-beginning) (region-end) file-path
                     nil nil nil nil))
     (message "Copied to BYOK (%s > %s)" (byok-project-name) file-name)))
 
@@ -83,25 +92,22 @@
 (defun byok-directory ()
   (concat byok-path "/Projects/" (byok-project-name)))
 
-(defun byok-full-path ()
-  (concat (byok-directory) "/" (byok-file-name)))
-
 (defun byok-confirm-mounted ()
   (unless (file-exists-p byok-path)
-      (user-error "BYOK device does not appear to be mounted.")))
+    (user-error "BYOK device does not appear to be mounted.")))
 
 (defun byok-confirm-file-exists (file-name)
   (unless (file-exists-p (concat (byok-directory) "/" file-name))
-      (user-error (message "File '%s' does not exist on BYOK." file-name))))
-
-(defun byok-backup ()
-  (if (eq byok-backups t)
-      (copy-file buffer-file-name (concat buffer-file-name ".bak") t)
-    (backup-buffer)))
+    (user-error (message "File '%s' does not exist on BYOK." file-name))))
 
 (defun byok-buffer-has-subtree ()
   (unless (or (eq major-mode 'org-mode) (eq major-mode 'markdown-mode))
     (user-error "Subtree commands require Org or Markdown mode.")))
+
+(defun byok-backup ()
+  (if (eq byok-backup-on-system t)
+      (copy-file buffer-file-name (concat buffer-file-name "~") t)
+    (backup-buffer)))
 
 (defun byok-mark-subtree ()
   (if (eq major-mode 'org-mode)
@@ -129,14 +135,31 @@
   :type 'directory
   :group 'byok)
 
-(defcustom byok-backups nil
-  "How to make backups of documents when syncing to BYOK."
-  :type '(choice (const :tag "Create .bak file" t)
-                (const :tag "Use Emacs 'backup-buffer' function" nil))
+(defcustom byok-backup-on-system nil
+  "Make explicit backups when copying from BYOK to your system.
+
+When this is set to 't', a backup (ending in '~') will be made of
+the file on your system before copying from the BYOK. If it is
+set to 'nil', the 'backup-buffer' function will be called
+instead; the effect of this depends on your configuration.
+
+Note that when enabled, this always backs up the entire file,
+even if you are using the subtree command."
+  :type 'boolean
+  :group 'byok)
+
+(defcustom byok-backup-on-device nil
+  "Make explicit backups when copying from your system to BYOK.
+
+When set to 't', a backup file (ending in '~') will be made on
+the BYOK before copying from the system. These files cannot be
+accessed on the device, but can be accessed in the Projects
+directory when the device is mounted."
+  :type 'boolean
   :group 'byok)
 
 (defcustom byok-unmount-command "diskutil eject /Volumes/BYOK"
-  "Command to use to unmount BYOK device."
+  "Command to use to unmount/eject BYOK device."
   :type 'string
   :group 'byok)
 
