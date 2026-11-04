@@ -46,6 +46,30 @@ Use ~C-c b~ in a text mode to call up the BYOK menu:
 
 Alternatively, call the functions directly (e.g., ~M-x byok-copy-file-to-device~).
 
+*** Example workflow
+
+I'm currently working on a novel, which I'm writing in one big Org Mode file, creatively called ~book.org~. I'm storing it on a path similar to this:
+
+#+begin_example
+Documents/
+└── Bancroft/
+    ├── book.org
+    └── notes.org
+#+end_example
+
+Every chapter simply begins with its own Level 1 heading (e.g., ~* Chapter 1~, ~* Chapter 2~, etc.). To take a chapter with me on the BYOK, I make sure that point is somewhere inside the chapter I want, put the BYOK in Disk Mode, and plug it in. I press ~C-c b s~ (copy subtree from Emacs to BYOK). Then, I eject it with ~C-c b u~; this should take the BYOK out of Disk Mode.
+
+In this case, if I were in Chapter 21 of the book, then ~Chapter 21.txt~ would be created or updated on the BYOK in the project ~Bancroft~.
+
+When I want to bring changes back into the Emacs file, it's simply the reverse: when point is in the chapter I want to import from the BYOK, I use ~C-c b r~ (copy subtree from BYOK to Emacs; the "r" is for "retrieve," since there wasn't any more obvious letter).
+
+*** What if you start writing a file on the BYOK?
+
+If a file exists on the BYOK that isn't in Emacs, then you can do one of two things:
+
++ Visit a file whose file name and parent directory match the project name and file name on the BYOK, and use ~C-c b f~. If you want to put it in a subtree, the parent directory has to match the project name and the current /heading/ has to match the BYOK file name. (For instance, I could start a ~Chapter 23~ on the BYOK, then type ~* Chapter 23~ as a heading in the book file in the example above to import it.)
++ Open the BYOK Project directory with ~C-c b p~ and just copy the file wherever you want it.
+
 ** Functions provided
 
 *** byok-copy-file-to-device (t)
@@ -88,9 +112,9 @@ Unmounts or ejects the BYOK device.
 
 ** Options
 
-You can customize options in the BYOK group: the path the BYOK mounts on, the command used to unmount/eject the BYOK, and how to make backups when copying from the BYOK. You can either have it create a ~.bak~ file before copying, or to use the Emacs ~backup-buffer~ function (which may or may not do anything, depending on your Emacs configuration).
+You can customize options in the BYOK group: the path the BYOK mounts on, the command used to unmount/eject the BYOK, and whether to make explicit backups when copying to and from the BYOK. Note that backups stored on the BYOK are not accessible on the device itself, but can be read from the Projects directory when the device is mounted.
 
-The eject command and the mount path are correct for macOS, but will need to be changed for other devices.
+*Warning!* The eject command and the mount path are correct for macOS, but will need to be changed for other operating systems.
 
 ** Notes
 
