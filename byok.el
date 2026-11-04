@@ -1,6 +1,30 @@
-;; byok.el - BYOK Device access library
-;; Watts Martin, November 2026 (version 0.5)
+;;; byok.el --- BYOK Device access library -*- lexical-binding: t; -*-
 
+;; Author: Watts Martin <watts@coyotetracks.org>
+;; URL: https://github.com/chipotle/byok.el
+;; Version: 0.5.0
+
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; byok.el provides functions and a transient menu for working
+;; with a BYOK device (https://byok.io).
+
+;;; Code:
 
 (defun byok-copy-file-to-device ()
   "Copy current file to mounted BYOK device."
@@ -106,39 +130,48 @@
 ;; Helper functions
 
 (defun byok-project-name ()
+  "Return project name."
   (car (last (split-string default-directory "/" t))))
 
 (defun byok-file-name ()
+  "Return file name on BYOK."
   (concat
    (file-name-sans-extension (file-name-nondirectory buffer-file-name))
    ".txt"))
 
 (defun byok-directory ()
+  "Return project directory on BYOK."
   (concat byok-path "/Projects/" (byok-project-name)))
 
 (defun byok-confirm-mounted ()
+  "Confirm the BYOK device is mounted."
   (unless (file-exists-p byok-path)
-    (user-error "BYOK device does not appear to be mounted.")))
+    (user-error "BYOK device does not appear to be mounted")))
 
 (defun byok-confirm-file-exists (file-name)
+  "Confirm file FILE-NAME exists on the BYOK."
   (unless (file-exists-p (concat (byok-directory) "/" file-name))
     (user-error (message "File '%s' does not exist on BYOK." file-name))))
 
 (defun byok-buffer-has-subtree ()
+  "Confirm the current buffer has subtree capability."
   (unless (or (eq major-mode 'org-mode) (eq major-mode 'markdown-mode))
-    (user-error "Subtree commands require Org or Markdown mode.")))
+    (user-error "Subtree commands require Org or Markdown mode")))
 
 (defun byok-backup ()
+  "Backup file on system based on setting."
   (if (eq byok-backup-on-system t)
       (copy-file buffer-file-name (concat buffer-file-name "~") t)
     (backup-buffer)))
 
 (defun byok-mark-subtree ()
+  "Mark the current subtree."
   (if (eq major-mode 'org-mode)
       (org-mark-subtree)
     (markdown-mark-subtree)))
 
 (defun byok-get-heading ()
+  "Get the heading of the current subtree."
   (let
       ((heading-text
         (if (eq major-mode 'org-mode)
@@ -150,12 +183,13 @@
                   (match-string-no-properties 5)))))))
     (replace-regexp-in-string "[,?/*\[&`()]" "" heading-text)))
 
-;; Customizable options
 
-(defgroup byok nil "BYOK Device Syncing")
+;;; Customizable options
+
+(defgroup byok nil "BYOK Device Access Functions.")
 
 (defcustom byok-path "/Volumes/BYOK"
-  "Path BYOK Device is mounted on."
+  "Path BYOK is mounted on."
   :type 'directory
   :group 'byok)
 
@@ -187,21 +221,25 @@ directory when the device is mounted."
   :type 'string
   :group 'byok)
 
-;; Keyboard mappings
+
+;;; Define BYOK transient menu
 
 (transient-define-prefix byok-menu ()
   ["BYOK whole file operations"
-   ("t" "Copy current file to device" byok-copy-file-to-device)
-   ("f" "Copy matching file from device to current buffer" byok-copy-file-from-device)
-   ("d" "Ediff system file and device file" byok-diff-files)]
+   ("t" "Copy file from Emacs to BYOK" byok-copy-file-to-device)
+   ("f" "Copy file from BYOK to Emacs" byok-copy-file-from-device)
+   ("d" "Ediff BYOK and Emacs file versions" byok-diff-files)]
 
   ["BYOK subtree (chapter/heading) operations"
-   ("s" "Copy current subtree to file on device" byok-copy-subtree-to-device)
-   ("r" "Copy current subtree from device to buffer" byok-copy-subtree-from-device)
-   ("e" "Ediff current subtree and device file" byok-diff-subtrees)]
+   ("s" "Copy subtree from Emacs to BYOK" byok-copy-subtree-to-device)
+   ("r" "Copy subtree from BYOK to Emacs" byok-copy-subtree-from-device)
+   ("e" "Ediff BYOK and Emacs subtree versions" byok-diff-subtrees)]
 
   ["Utilities"
-   ("p" "Open BYOK top-level projects directory" byok-projects-directory)
-   ("u" "Unmount/eject BYOK device" byok-unmount)])
+   ("p" "Open BYOK Projects directory" byok-projects-directory)
+   ("u" "Unmount/eject BYOK" byok-unmount)])
 
 (keymap-set text-mode-map "C-c b" #'byok-menu)
+
+(provide 'byok)
+;;; byok.el ends here

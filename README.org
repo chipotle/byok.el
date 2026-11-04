@@ -8,6 +8,21 @@ The BYOK device is a neat "digital typewriter," but if you're not using the BYOK
 
 Note that "out of the box" this is configured to work with a Mac; under Linux or Windows, you'll need to adjust the [[*Options][Options]] for both the mounting path and the unmount/eject command.
 
+** Installation
+
+Download ~byok.el~ and use the ~require~ command in your init file:
+
+#+begin_src emacs-lisp
+(require 'byok "/path/to/byok.el")
+#+end_src
+
+Alternatively, you can use ~use-package~ with the ~vc:~ option:
+
+#+begin_src emacs-lisp
+(use-package byok
+  :vc (:url "https://github.com/chipotle/byok.el"))
+#+end_src
+
 ** Usage
 
 *byok.el* provides a set of interactive functions and a Transient menu to call them, mapped to ~C-c b~ in text modes. Before using any functions, you need to put the BYOK into Disk Mode and connect it to your computer.
@@ -16,14 +31,18 @@ The *byok.el* library treats the directory name of your current file as the name
 
 Use ~C-c b~ in a text mode to call up the BYOK menu:
 
-| Key | Function                                     |
-|-----+----------------------------------------------|
-| t   | Copy current file to device                  |
-| f   | Copy matching file from device to buffer     |
-| s   | Copy current subtree to file on device       |
-| r   | Retrieve current subtree from file on device |
-| d   | Display BYOK top-level projects directory    |
-| u   | Umount/eject BYOK                            |
+| Key | Function                              |
+|-----+---------------------------------------|
+| t   | Copy file from Emacs to BYOK          |
+| f   | Copy file from BYOK to Emacs          |
+| d   | Ediff BYOK and Emacs file versions    |
+|-----+---------------------------------------|
+| s   | Copy subtree from Emacs to BYOK       |
+| r   | Copy subtree from BYOK to Emacs       |
+| e   | Ediff BYOK and Emacs subtree versions |
+|-----+---------------------------------------|
+| p   | Open BYOK Projects directory          |
+| u   | Umount/eject BYOK                     |
 
 Alternatively, call the functions directly (e.g., ~M-x byok-copy-file-to-device~).
 
@@ -70,11 +89,3 @@ The eject command and the mount path are correct for macOS, but will need to be 
 The BYOK device does not keep track of date and time, which makes it impossible for the library to determine whether the file on your device is newer or older than the device on your system. This is why you explicitly copy to or from the device rather than syncing. If you want to get down and dirty with ~ediff~ for changes, you can open the files side by side.
 
 While the file copying commands can work on any text file, the subtree commands require an Org or Markdown file. The latter assumes you're using [[https://jblevins.org/projects/markdown-mode/][Markdown Mode for Emacs]] and probably won't work correctly with other Markdown modes.
-
-** Installation
-
-Since this isn't a package yet, just use the ~load~ command in your init file, e.g.,
-
-#+begin_src emacs-lisp
-(load (concat user-emacs-directory "byok.el"))
-#+end_src
