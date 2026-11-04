@@ -1,5 +1,4 @@
-;;
-                                        ; byok.el --- BYOK Device access library -*- lexical-binding: t; -*-
+;;; byok.el --- BYOK Device access library -*- lexical-binding: t; -*-
 
 ;; Author: Watts Martin <watts@coyotetracks.org>
 ;; URL: https://github.com/chipotle/byok.el
