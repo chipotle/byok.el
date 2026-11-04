@@ -1,5 +1,5 @@
 ;; byok.el - BYOK Device access library
-;; Watts Martin, November 2026 (version 0.3)
+;; Watts Martin, November 2026 (version 0.5)
 
 
 (defun byok-copy-file-to-device ()
@@ -30,6 +30,16 @@
     (insert-file-contents file-path nil nil nil t)
     (message "Copied from BYOK (%s > %s)" (byok-project-name) file-name)))
 
+(defun byok-diff-files ()
+  "Diff current file with matched file on BYOK device."
+  (interactive)
+  (byok-confirm-mounted)
+  (let*
+      ((file-name (byok-file-name))
+       (file-path (concat (byok-directory) "/" file-name)))
+    (byok-confirm-file-exists file-name)
+    (ediff-files file-path buffer-file-name)))
+
 
 (defun byok-copy-subtree-to-device ()
   "Copy current subtree to mounted BYOK device."
@@ -53,7 +63,7 @@
   (interactive)
   (byok-confirm-mounted)
   (let*
-      ((file-name (concat (substring-no-properties (byok-get-heading)) ".txt"))
+      ((file-name (concat (byok-get-heading) ".txt"))
        (file-path (concat (byok-directory) "/" file-name)))
     (byok-confirm-file-exists file-name)
     (save-buffer)
@@ -63,6 +73,20 @@
     (insert-file-contents file-path)
     (message "Copied from BYOK (%s > %s)"
              (byok-project-name) file-name)))
+
+
+(defun byok-diff-subtrees ()
+  "Diff current subtree with matched file on BYOK device."
+  (interactive)
+  (byok-confirm-mounted)
+  (let*
+      ((file-name (concat (byok-get-heading) ".txt"))
+       (file-path (concat (byok-directory) "/" file-name)))
+    (byok-confirm-file-exists file-name)
+    (org-narrow-to-subtree)
+    (ediff-buffers
+     (find-file-noselect file-path)
+     (current-buffer))))
 
 
 (defun byok-unmount ()
@@ -166,12 +190,18 @@ directory when the device is mounted."
 ;; Keyboard mappings
 
 (transient-define-prefix byok-menu ()
-  ["BYOK tasks"
+  ["BYOK whole file operations"
    ("t" "Copy current file to device" byok-copy-file-to-device)
-   ("f" "Copy matching file from device to buffer" byok-copy-file-from-device)
+   ("f" "Copy matching file from device to current buffer" byok-copy-file-from-device)
+   ("d" "Ediff system file and device file" byok-diff-files)]
+
+  ["BYOK subtree (chapter/heading) operations"
    ("s" "Copy current subtree to file on device" byok-copy-subtree-to-device)
-   ("r" "Retrieve current subtree from file on device" byok-copy-subtree-from-device)
-   ("d" "Open BYOK top-level projects directory" byok-projects-directory)
+   ("r" "Copy current subtree from device to buffer" byok-copy-subtree-from-device)
+   ("e" "Ediff current subtree and device file" byok-diff-subtrees)]
+
+  ["Utilities"
+   ("p" "Open BYOK top-level projects directory" byok-projects-directory)
    ("u" "Unmount/eject BYOK device" byok-unmount)])
 
 (keymap-set text-mode-map "C-c b" #'byok-menu)
